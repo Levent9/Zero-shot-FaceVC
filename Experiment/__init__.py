@@ -1,0 +1,3 @@
+from Experiment.experiment_memory_vqmivc_pretrain_pseudo import Facevoice_memory_vqmivc_pretrain_pseudo
+
+EXPERIMENTS = {"vqmivc_facevoice_memory_pretrain_pseudo": Facevoice_memory_vqmivc_pretrain_pseudo}
