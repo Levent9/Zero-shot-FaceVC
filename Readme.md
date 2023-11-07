@@ -5,7 +5,7 @@
 
 This [paper](https://arxiv.org/pdf/2309.09470) presents a novel task, zero-shot voice conversion based on face images (zero-shot FaceVC). We leverage a memory-based face-voice alignment module for the capture of voice characteristics from face images.  A mixed supervision strategy is also introduced to mitigate the long-standing issue of the inconsistency between training and inference phases for voice conversion tasks. To obtain speaker-independent content-related representations, we transfer the knowledge from a pretrained zero-shot voice conversion model [VQMIVC](https://github.com/Wendison/VQMIVC) to our zero-shot FaceVC model. 
 
-[Paper Demo](https://levent9.github.io/ZeroshotFaceVC-demo/)
+
 
 
 ## Training
@@ -21,11 +21,11 @@ python Tools/preprocess/extract_wav_feature.py
 ```
 4. Extract face feature 
 ```python
-python Tools/Preprocess/extract_face_feature.py
+python Tools/preprocess/extract_face_feature.py
 ```
 5. Extract speech feature
 ```
-python Tools/Preprocess/extract_spk_emb.py
+python Tools/preprocess/extract_spk_emb.py
 ```
 
 - Step2. Model training
