@@ -40,7 +40,7 @@ python ./run_shell/train.sh
 
 
 ## Citation
-If the code is used in your research, please <a class="github-button" href="https://github.com/wendison/VQMIVC" data-icon="octicon-star" aria-label="Star wendison/VQMIVC on GitHub">Star</a> our repo and cite our paper:
+If the code is used in your research, please <a class="github-button" href="https://github.com/Levent9/Zero-shot-FaceVC" data-icon="octicon-star" aria-label="Star wendison/VQMIVC on GitHub">Star</a> our repo and cite our paper:
 ```
 @inproceedings{10.1145/3581783.3613825,
 author = {Sheng, Zheng-Yan and Ai, Yang and Chen, Yan-Nian and Ling, Zhen-Hua},
