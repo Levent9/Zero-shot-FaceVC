@@ -38,7 +38,7 @@ python Tools/Preprocess/extract_spk_emb.py
 ./run_shell/train.sh
 ```
 - Step3. Inference 
-1. Preprocess the samples to be inference according to the Step 1. The IDs of the preprocessed samples are in file "test_src_speakers.txt" and "test_tar_speakers.txt".
+1. Preprocess the samples for inference following Step 1. The IDs of the preprocessed samples can be found in the files "test_src_speakers.txt" and "test_tar_speakers.txt."
 
 2. Runing inference
 ```
