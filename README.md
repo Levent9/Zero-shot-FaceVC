@@ -5,6 +5,7 @@
 
 This [paper](https://arxiv.org/pdf/2309.09470) presents a novel task, zero-shot voice conversion based on face images (zero-shot FaceVC). We leverage a memory-based face-voice alignment module for the capture of voice characteristics from face images.  A mixed supervision strategy is also introduced to mitigate the long-standing issue of the inconsistency between training and inference phases for voice conversion tasks. To obtain speaker-independent content-related representations, we transfer the knowledge from a pretrained zero-shot voice conversion model [VQMIVC](https://github.com/Wendison/VQMIVC) to our zero-shot FaceVC model. 
 
+[Paper Demo](https://levent9.github.io/ZeroshotFaceVC-demo/)
 
 
 ## Training
@@ -20,11 +21,11 @@ python Tools/preprocess/extract_wav_feature.py
 ```
 4. Extract face feature 
 ```python
-python Tools/preprocess/extract_face_feature.py
+python Tools/Preprocess/extract_face_feature.py
 ```
 5. Extract speech feature
 ```
-python Tools/preprocess/extract_spk_emb.py
+python Tools/Preprocess/extract_spk_emb.py
 ```
 
 - Step2. Model training
@@ -33,14 +34,21 @@ python Tools/preprocess/extract_spk_emb.py
 2. Download the pretrained [VQMIVC](https://drive.google.com/drive/folders/1u8xAJdJEQ3MKfTDSks1xFkTcR2CXdfAd?usp=sharing) and place it in folder pretrained
 
 3. Training model
-```python
-python ./run_shell/train.sh
 ```
-- Step3. Inference (coming soon)
+./run_shell/train.sh
+```
+- Step3. Inference 
+1. Ppreprocess the samples to be inference according to the Step 1. The IDs of the preprocessed samples are in file "test_src_speakers.txt" and "test_tar_speakers.txt".
+
+2. Runing inference
+```
+./run_shell/inference.sh
+```
+
 
 
 ## Citation
-If the code is used in your research, please <a class="github-button" href="https://github.com/Levent9/Zero-shot-FaceVC" data-icon="octicon-star" aria-label="Star wendison/VQMIVC on GitHub">Star</a> our repo and cite our paper:
+If the code is used in your research, please <a class="github-button" href="https://github.com/wendison/VQMIVC" data-icon="octicon-star" aria-label="Star wendison/VQMIVC on GitHub">Star</a> our repo and cite our paper:
 ```
 @inproceedings{10.1145/3581783.3613825,
 author = {Sheng, Zheng-Yan and Ai, Yang and Chen, Yan-Nian and Ling, Zhen-Hua},
