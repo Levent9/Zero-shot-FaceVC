@@ -430,7 +430,122 @@ class Facevoice_memory_vqmivc_pretrain_pseudo(ExperimentBuilder):
         return metrics
 
 
+    def get_src_tar_paths(self, infer_dataset='LRS3'):
+        src_speaker_dict = {}
+        tar_speaker_dict = {}
+        
+        src_speaker_cont_path =  'test_src_speakers.txt'
+        tar_speaker_cont_path = 'test_tar_speakers.txt'
 
+        src_speaker_cont_f = open(src_speaker_cont_path,'r')
+        src_speaker_cont = src_speaker_cont_f.readlines()
+        
+        for line in src_speaker_cont:
+            spk_id = line.split('-')[0]
+            gender = line.split('-')[1][:-1]
+            src_speaker_dict[spk_id] = gender
+
+        tar_speaker_cont_f = open(tar_speaker_cont_path,'r')
+        tar_speaker_cont = tar_speaker_cont_f.readlines()
+        for line in tar_speaker_cont:
+            spk_id = line.split('-')[0]
+            gender = line.split('-')[-1][:-1]
+            tar_speaker_dict[spk_id] = gender
+
+        select_src_wav_paths = []
+        select_tar_wav_paths = []
+        for i in src_speaker_dict:
+            cur_spk_paths = glob(os.path.join(self.config.get("input", "wav_path"),i,'*.wav'))
+            random.shuffle(cur_spk_paths)
+            for wav_path in cur_spk_paths[:6]:
+                select_src_wav_paths.append(wav_path)
+
+        for i in tar_speaker_dict:      
+            cur_spk_paths = glob(os.path.join(self.config.get("input", "wav_path"),i,'*.wav'))
+            random.shuffle(cur_spk_paths)
+            for wav_path in cur_spk_paths[:3]:
+                select_tar_wav_paths.append(wav_path)
+        print(len(select_src_wav_paths), len(select_tar_wav_paths))
+        return src_speaker_dict, tar_speaker_dict, select_src_wav_paths, select_tar_wav_paths
+        
+        
+    def get_save_path(self, src_wav_path, ref_wav_path):
+        src_spk = src_wav_path.split('/')[-2]
+        ref_spk = ref_wav_path.split('/')[-2]
+
+        src_wav_id = src_wav_path.split('/')[-1][:-4]
+        ref_wav_id = ref_wav_path.split('/')[-1][:-4]
+        output_filename_suffix =  ref_spk[:4] + '_' + ref_wav_id + '_'+ \
+            src_spk[:4] + '_' + src_wav_id + '_' + self.src_speaker_dict[src_spk] + '2' + self.tar_speaker_dict[ref_spk]
+        return output_filename_suffix
+        
+
+    def run_inference(self, infer_dataset="LRS3"):
+        self.infer_dataset = infer_dataset
+        
+        self.src_speaker_dict, self.tar_speaker_dict, select_src_wav_paths, select_tar_wav_paths = self.get_src_tar_paths(infer_dataset=self.infer_dataset)
+        checkpoint_model_name = self.config.get("output", "checkpoint")
+        if 'Best' in checkpoint_model_name:
+            checkpoint_path = os.path.join(self.output_root, self.output_path[2:], 'models', checkpoint_model_name)
+        else:
+            checkpoint_path = os.path.join(self.output_root, self.output_path[2:], 'models', 'checkpoint', checkpoint_model_name)
+        
+        output_dir = os.path.join(self.output_root, self.output_path[2:],'wav_'+checkpoint_model_name.split('-')[-1][:-3])
+        print('Load From:')
+        print(checkpoint_path)
+        os.makedirs(output_dir, exist_ok=True)
+        checkpoint = torch.load(checkpoint_path, map_location=lambda storage, loc: storage)
+        self.encoder.load_state_dict(checkpoint['encoder'])
+        self.encoder_spk.load_state_dict(checkpoint['encoder_spk'])
+        self.decoder.load_state_dict(checkpoint['decoder'])
+
+        self.encoder.eval()
+        self.encoder_spk.eval()
+        self.decoder.eval()
+
+        mel_stats = np.load(os.path.join(self.config.get("input","data_path"),"mel_stats_" + self.config.get("input","spk_num") + ".npy"))
+
+        mean = mel_stats[0]
+        std = mel_stats[1]
+
+
+        feat_writer = kaldiio.WriteHelper("ark,scp:{o}.ark,{o}.scp".format(o=str(output_dir)+'/feats.1'))
+        for src_wav_path in tqdm(select_src_wav_paths):
+            for ref_wav_path in select_tar_wav_paths:
+                mel, lf0 = extract_logmel(src_wav_path, mean, std)
+                ref_mel, _ = extract_logmel(ref_wav_path, mean, std)
+                ref_speaker_id = ref_wav_path.split('/')[-2]
+                ref_wav_id = ref_wav_path.split('/')[-1][:-4]
+                
+                face_emb = np.load(os.path.join(self.config.get("input","data_path"),'test',self.config.get("model","face_type").split('_')[0],
+                                ref_speaker_id, ref_speaker_id + '_' + ref_wav_id +'.npy'))
+                mel = torch.FloatTensor(mel.T).unsqueeze(0).cuda()
+                lf0 = torch.FloatTensor(lf0).unsqueeze(0).cuda()
+                ref_mel = torch.FloatTensor(ref_mel.T).unsqueeze(0).cuda()
+                face_emb = torch.FloatTensor(face_emb).cuda()
+
+                out_filename = os.path.join(self.get_save_path(src_wav_path, ref_wav_path))
+                with torch.no_grad():
+                    
+                    z, _, _, _ = self.encoder.encode(mel)
+                    lf0_embs = self.encoder_lf0(lf0)
+                    spk_embs = self.encoder_spk.inference(face_emb)
+                    output = self.decoder(z, lf0_embs, spk_embs)
+                    
+                    logmel = output.squeeze(0).cpu().numpy()
+
+                    feat_writer[out_filename] = logmel
+
+        feat_writer.close()
+        
+
+        print('synthesize waveform...')
+
+        # replace the pwg checkpoint save path 
+        cmd = ['parallel-wavegan-decode', '--checkpoint', \
+            '/home/zysheng/US_Facevc/pretrained/vqmivc/VQMIVC-pretrained models/vocoder/checkpoint-3000000steps.pkl', \
+            '--feats-scp', f'{str(output_dir)}/feats.1.scp', '--outdir', str(output_dir)]
+        subprocess.call(cmd)
         
 
 
